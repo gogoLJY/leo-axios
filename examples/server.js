@@ -41,6 +41,71 @@ router.post('/base/post', function(req, res) {
   res.json(req.body)
 })
 
+router.get('/error/get', function(req, res) {
+  if (Math.random() > 0.5) {
+    res.json({
+      msg: `hello world`
+    })
+  } else {
+    res.status(500)
+    res.end()
+  }
+})
+
+router.get('/error/timeout', function(req, res) {
+  setTimeout(() => {
+    res.json({
+      msg: `hello world`
+    })
+  }, 3000)
+})
+
+router.put('/error/put', function(req, res) {
+  setTimeout(() => {
+    res.json({
+      msg: `hello world`
+    })
+  }, 3000)
+})
+
+router.get('/extend/user', function(req, res) {
+  res.json({
+    code: 0,
+    message: 'ok',
+    result: {
+      name: 'jack',
+      age: 18
+    }
+  })
+})
+
+router.post('/extend/post', function(req, res) {
+  res.json({
+    code: 0,
+    message: 'ok',
+    result: {
+      name: 'jack',
+      age: 18
+    }
+  })
+})
+
+registerCancelRouter()
+
+function registerCancelRouter () {
+  router.get('/cancel/get', function(req, res) {
+    setTimeout(() => {
+      res.json('hello')
+    }, 1000)
+  })
+
+  router.post('/cancel/post', function(req, res) {
+    setTimeout(() => {
+      res.json(req.body)
+    }, 1000)
+  })
+}
+
 app.use(router)
 
 const port = process.env.PORT || 8080

@@ -1,4 +1,9 @@
-import { isUndef, isArray, isDate, isPlainObject } from './utils'
+import { isUndef, isArray, isDate, isPlainObject, isURLSearchParams } from './utils'
+
+interface URLOrigin {
+  protocol: string
+  host: string
+}
 
 function encodeUrl(val: string): string {
   return encodeURIComponent(val)
@@ -58,17 +63,30 @@ function parseParams(params?: any) {
   return parts
 }
 
-export function buildUrl(url: string, params?: any): string {
+export function buildUrl(
+  url: string,
+  params?: any,
+  paramsSerializer?: (params: any) => string
+): string {
   if (!params) {
     return url
   }
 
+  let parts: string[] = []
+
+  let serializedParams
+
   let urlArr = url.split('?')
   url = urlArr[0]
 
-  const parts: string[] = parseParams(Object.assign({}, getAllUrlParam(urlArr[1]), params))
-
-  let serializedParams = parts.join('&')
+  if (paramsSerializer) {
+    serializedParams = paramsSerializer(params)
+  } else if (isURLSearchParams(params)) {
+    serializedParams = params.toString()
+  } else {
+    parts = parseParams(Object.assign({}, getAllUrlParam(urlArr[1]), params))
+    serializedParams = parts.join('&')
+  }
 
   if (serializedParams) {
     // 判断 是否带 hash
@@ -81,4 +99,33 @@ export function buildUrl(url: string, params?: any): string {
   }
 
   return url
+}
+
+const urlParsingNode = document.createElement('a')
+const currentOrigin = resolveURL(window.location.href)
+
+function resolveURL(url: string): URLOrigin {
+  urlParsingNode.setAttribute('href', url)
+
+  const { protocol, host } = urlParsingNode
+
+  return { protocol, host }
+}
+
+export function isUrlSameOrigin(requestURL: string): boolean {
+  // 协议域名端口号
+  //
+  const parsedOrigin = resolveURL(requestURL)
+
+  return (
+    currentOrigin.protocol === parsedOrigin.protocol && currentOrigin.host === parsedOrigin.host
+  )
+}
+
+export function isAbsoluteUrl(url: string): boolean {
+  return /(^[a-z][a-z\d\+\-\.]*:)?\/\//i.test(url)
+}
+
+export function combineUrl(baseUrl: string, relativeUrl?: string) {
+  return relativeUrl ? baseUrl.replace(/\/+$/, '') + '/' + relativeUrl.replace(/^\/+/, '') : baseUrl
 }
